@@ -19,8 +19,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`}>
       <head>
-        {/* Icon font used by components/ui/Icon.js */}
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        {/* Icon font used by components/ui/Icon.js. display=block on purpose: with "swap" the icon
+            names ("search", "menu", ...) would flash as plain text until the font loads. */}
+        {/* This is the root layout, so the font loads on every page (the rule targets the old pages/ router) */}
+        {/* eslint-disable-next-line @next/next/google-font-display, @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0&display=block"

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev --port 5173",
     "build": "next build",
-    "start": "next start --port 5173"
+    "start": "next start --port 5173",
+    "lint": "eslint ."
   },
   "dependencies": {
     "next": "^16.4.3",
@@ -15,6 +16,8 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.3",
     "tailwindcss": "^4.3.3"
   }
 }

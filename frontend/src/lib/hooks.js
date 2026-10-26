@@ -18,30 +18,39 @@ export function useTitle(title) {
 export function useApi(path) {
   const router = useRouter();
   const pathname = usePathname();
-  const [state, setState] = useState({ data: null, error: null, loading: Boolean(path) });
   const [version, setVersion] = useState(0);
+  // `key` records which request the data belongs to. While a newer request for the same endpoint
+  // runs (reload, other filters), the old data stays on screen and `loading` is true.
+  const [state, setState] = useState({ key: null, path: null, data: null, error: null });
+  const requestKey = path ? `${version}:${path}` : null;
+  const endpoint = (value) => (value || '').split('?')[0];
+  const sameEndpoint = endpoint(state.path) === endpoint(path);
 
   useEffect(() => {
-    if (!path) return undefined;
+    if (!requestKey) return undefined;
     let active = true;
-    setState((current) => ({ ...current, loading: true }));
 
     api
       .get(path)
-      .then((data) => active && setState({ data, error: null, loading: false }))
+      .then((data) => active && setState({ key: requestKey, path, data, error: null }))
       .catch((error) => {
         if (!active) return;
         if (error.status === 401) router.replace(loginUrl(pathname + window.location.search));
-        setState({ data: null, error, loading: false });
+        setState({ key: requestKey, path, data: null, error });
       });
 
     return () => {
       active = false;
     };
-  }, [path, version, router, pathname]);
+  }, [requestKey, path, router, pathname]);
 
   const reload = useCallback(() => setVersion((v) => v + 1), []);
-  return { ...state, reload };
+  return {
+    data: sameEndpoint ? state.data : null,
+    error: sameEndpoint ? state.error : null,
+    loading: requestKey !== null && state.key !== requestKey,
+    reload,
+  };
 }
 
 // Runs an API call that changes data (a button or form submit).

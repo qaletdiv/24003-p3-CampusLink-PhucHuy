@@ -26,13 +26,22 @@ export function AppProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    Promise.all([refreshUser(), api.get('/meta').then(setMeta)]).catch((err) => setBootError(err));
-  }, [refreshUser]);
+    Promise.all([api.get('/auth/me'), api.get('/meta')])
+      .then(([me, options]) => {
+        setCsrfToken(me.csrfToken);
+        setUser(me.user);
+        setMeta(options);
+      })
+      .catch(setBootError);
+  }, []);
 
   // A flash message belongs to one page: it disappears once the user goes somewhere else.
-  useEffect(() => {
-    setFlash((current) => (current && current.path !== pathname ? null : current));
-  }, [pathname]);
+  // (Adjusted while rendering instead of in an effect, so the old message never shows on the new page.)
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    if (flash && flash.path !== pathname) setFlash(null);
+  }
 
   const notify = useCallback(
     (message, type = 'success', path = window.location.pathname) => setFlash({ message, type, path }),

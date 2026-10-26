@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useApp } from '@/components/providers/AppProvider';
 import { Icon } from '@/components/ui/Icon';
 import { initials } from '@/lib/format';
@@ -23,10 +23,10 @@ export function Header() {
   const { user, logout, notify } = useApp();
   const pathname = usePathname();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  // The phone menu remembers the page it was opened on, so it closes by itself after navigating.
+  const [openOn, setOpenOn] = useState(null);
+  const open = openOn === pathname;
   const [loggingOut, setLoggingOut] = useState(false);
-
-  useEffect(() => setOpen(false), [pathname]); // close the phone menu after navigating
 
   const isActive = (href) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
   const linkClass = (href) =>
@@ -60,7 +60,7 @@ export function Header() {
           className="btn btn-muted px-3 lg:hidden"
           aria-expanded={open}
           aria-controls="site-nav"
-          onClick={() => setOpen((value) => !value)}
+          onClick={() => setOpenOn(open ? null : pathname)}
         >
           <Icon name={open ? 'close' : 'menu'} />
           <span className="sr-only">{open ? 'Close menu' : 'Open menu'}</span>
