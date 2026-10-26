@@ -1,0 +1,30 @@
+<%# Pagination bar. Expects: page, totalPages, pageList (from utils/pagination.js), pageUrl(n) %>
+<% if (totalPages > 1) { %>
+  <nav class="pagination" aria-label="Pagination">
+    <% if (page > 1) { %>
+      <a href="<%= pageUrl(page - 1) %>" rel="prev">← Previous</a>
+    <% } else { %>
+      <span class="disabled" aria-hidden="true">← Previous</span>
+    <% } %>
+
+    <ul>
+      <% pageList.forEach((item) => { %>
+        <li>
+          <% if (item === '…') { %>
+            <span class="ellipsis" aria-hidden="true">…</span>
+          <% } else if (item === page) { %>
+            <span class="current" aria-current="page"><span class="sr-only">Page </span><%= item %></span>
+          <% } else { %>
+            <a href="<%= pageUrl(item) %>"><span class="sr-only">Page </span><%= item %></a>
+          <% } %>
+        </li>
+      <% }) %>
+    </ul>
+
+    <% if (page < totalPages) { %>
+      <a href="<%= pageUrl(page + 1) %>" rel="next">Next →</a>
+    <% } else { %>
+      <span class="disabled" aria-hidden="true">Next →</span>
+    <% } %>
+  </nav>
+<% } %>

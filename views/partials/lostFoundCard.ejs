@@ -1,0 +1,14 @@
+<%# Card for one Lost & Found post. Expects: post %>
+<% const heading = locals.headingLevel || 'h3'; // h2 on list pages, h3 inside a section %>
+<article class="card">
+  <div class="card-tags">
+    <span class="lf-type lf-type-<%= post.post_type %>"><%= constants.LOST_FOUND_TYPES[post.post_type] %></span>
+    <span class="tag tag-muted"><%= constants.LOST_FOUND_CATEGORIES[post.category] %></span>
+    <span class="status status-lf-<%= post.status %>"><%= constants.LOST_FOUND_STATUSES[post.status] %></span>
+  </div>
+  <<%= heading %> class="card-title"><a href="/lost-found/<%= post.id %>"><%= post.title %></a></<%= heading %>>
+  <dl class="card-meta">
+    <div><dt>Where</dt><dd><%= post.location_label %></dd></div>
+    <div><dt>Posted</dt><dd><%= formatDateTime(post.created_at) %></dd></div>
+  </dl>
+</article>

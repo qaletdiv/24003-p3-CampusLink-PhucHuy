@@ -1,0 +1,197 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<%
+  const minutesLeft = (date) => Math.max(1, Math.round((new Date(date) - Date.now()) / 60000));
+  const hasSignalErrors = Object.keys(signalErrors).length > 0;
+  const invalid = (name) => signalErrors[name] ? `aria-invalid="true" aria-describedby="error-${name}"` : '';
+  const otherMembers = members.filter((member) => !member.is_owner);
+%>
+
+<main id="main" class="container section">
+  <a href="/teams" class="back-link">← Back to teams</a>
+
+  <div class="detail-layout">
+    <div class="detail-main-col">
+      <article class="detail-main card">
+        <div class="card-tags">
+          <span class="tag"><%= team.member_count %> member<%= team.member_count === 1 ? '' : 's' %></span>
+          <span class="tag tag-muted"><%= team.upcoming_count %> upcoming session<%= team.upcoming_count === 1 ? '' : 's' %></span>
+          <% if (isOwner) { %><span class="status status-accepted">You own this team</span>
+          <% } else if (isMember) { %><span class="status status-accepted">Member</span><% } %>
+        </div>
+        <h1 class="detail-title"><%= team.name %></h1>
+        <p class="detail-posted">Owner: <%= team.owner_name %> · Created <%= formatDateTime(team.created_at) %></p>
+        <h2 class="sr-only">About this team</h2>
+        <div class="detail-description"><%= team.description %></div>
+      </article>
+
+      <% if (!isMember) { %>
+        <p class="empty-state">Join the team to see its members, sessions and Team Signals.</p>
+      <% } else { %>
+
+        <%# ----- Team Signals ----- %>
+        <section class="card" aria-labelledby="signals-title">
+          <div class="section-head">
+            <h2 id="signals-title" class="side-title">Team Signals</h2>
+          </div>
+          <p class="field-hint">Short-lived invitations to meet up right now. They disappear when they expire.</p>
+
+          <% if (signals.length === 0) { %>
+            <p class="muted">No active signals.</p>
+          <% } else { %>
+            <ul class="signal-list">
+              <% signals.forEach((signal) => { %>
+                <li class="signal">
+                  <p class="signal-message"><%= signal.message %></p>
+                  <p class="offer-meta">
+                    At <strong><%= signal.location_label %></strong>
+                    · from <%= signal.sender_name %>
+                    · active until <%= formatDateTime(signal.expires_at) %> (<%= minutesLeft(signal.expires_at) %> min left)
+                  </p>
+                  <% if (signal.sender_user_id === currentUser.id) { %>
+                    <form action="/teams/<%= team.id %>/signals/<%= signal.id %>/cancel" method="post">
+                      <%- include('../partials/csrfField') %>
+                      <button type="submit" class="btn btn-ghost">Cancel signal</button>
+                    </form>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
+
+          <details class="propose" <%= hasSignalErrors ? 'open' : '' %>>
+            <summary>Send a signal</summary>
+            <%- include('../partials/errorSummary', { errors: signalErrors }) %>
+            <form action="/teams/<%= team.id %>/signals" method="post" novalidate>
+              <%- include('../partials/csrfField') %>
+              <div class="form-field">
+                <label for="field-message">Message</label>
+                <input id="field-message" name="message" type="text" required maxlength="280"
+                       value="<%= signalValues.message %>" placeholder="e.g. Studying for the quiz – join us!" <%- invalid('message') %>>
+                <%- include('../partials/fieldError', { errors: signalErrors, name: 'message' }) %>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="field-locationLabel">Where</label>
+                  <input id="field-locationLabel" name="locationLabel" type="text" required maxlength="150"
+                         value="<%= signalValues.locationLabel %>" placeholder="e.g. Library café" <%- invalid('locationLabel') %>>
+                  <%- include('../partials/fieldError', { errors: signalErrors, name: 'locationLabel' }) %>
+                </div>
+                <div class="form-field">
+                  <label for="field-durationMinutes">Active for</label>
+                  <select id="field-durationMinutes" name="durationMinutes" <%- invalid('durationMinutes') %>>
+                    <% Object.entries(signalDurations).forEach(([value, label]) => { %>
+                      <option value="<%= value %>" <%= String(signalValues.durationMinutes) === value ? 'selected' : '' %>><%= label %></option>
+                    <% }) %>
+                  </select>
+                  <%- include('../partials/fieldError', { errors: signalErrors, name: 'durationMinutes' }) %>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Send signal</button>
+            </form>
+          </details>
+        </section>
+
+        <%# ----- Sessions / events ----- %>
+        <section class="card" aria-labelledby="sessions-title">
+          <div class="section-head">
+            <h2 id="sessions-title" class="side-title">Sessions &amp; events</h2>
+            <a href="/teams/<%= team.id %>/sessions/new" class="btn btn-primary">+ New session</a>
+          </div>
+
+          <% if (sessions.upcoming.length === 0) { %>
+            <p class="muted">No upcoming sessions. Plan one for your team!</p>
+          <% } else { %>
+            <ul class="session-list">
+              <% sessions.upcoming.forEach((session) => { %>
+                <li>
+                  <a href="/teams/<%= team.id %>/sessions/<%= session.id %>" class="session-title"><%= session.title %></a>
+                  <p class="offer-meta">
+                    <%= formatDateTime(session.starts_at) %> – <%= formatDateTime(session.ends_at) %>
+                    <% if (session.location_label) { %>· <%= session.location_label %><% } %>
+                  </p>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
+
+          <% if (sessions.others.length > 0) { %>
+            <details class="past-sessions">
+              <summary>Past and cancelled (<%= sessions.others.length %>)</summary>
+              <ul class="session-list">
+                <% sessions.others.forEach((session) => { %>
+                  <li>
+                    <a href="/teams/<%= team.id %>/sessions/<%= session.id %>" class="session-title"><%= session.title %></a>
+                    <span class="status status-<%= session.status === 'cancelled' ? 'cancelled' : 'closed' %>"><%= session.status === 'cancelled' ? 'Cancelled' : 'Past' %></span>
+                    <p class="offer-meta"><%= formatDateTime(session.starts_at) %></p>
+                  </li>
+                <% }) %>
+              </ul>
+            </details>
+          <% } %>
+        </section>
+      <% } %>
+    </div>
+
+    <aside class="detail-side">
+      <section class="card" aria-labelledby="membership-title">
+        <h2 id="membership-title" class="side-title">Membership</h2>
+        <% if (!currentUser) { %>
+          <a href="<%= loginUrl %>" class="btn btn-primary btn-block">Log in to join</a>
+        <% } else if (!isMember) { %>
+          <form action="/teams/<%= team.id %>/join" method="post">
+            <%- include('../partials/csrfField') %>
+            <button type="submit" class="btn btn-primary btn-block">Join team</button>
+          </form>
+        <% } else if (isOwner) { %>
+          <div class="stack">
+            <a href="/teams/<%= team.id %>/edit" class="btn btn-primary btn-block">Edit team</a>
+            <p class="field-hint">To leave, first make another member the owner (see Members below).</p>
+          </div>
+        <% } else { %>
+          <p class="muted">You’re a member of this team.</p>
+          <form action="/teams/<%= team.id %>/leave" method="post" data-confirm="Leave <%= team.name %>? Your active signals will be cancelled.">
+            <%- include('../partials/csrfField') %>
+            <button type="submit" class="btn btn-danger btn-block">Leave team</button>
+          </form>
+        <% } %>
+      </section>
+
+      <% if (isMember) { %>
+        <section class="card" aria-labelledby="members-title">
+          <h2 id="members-title" class="side-title">Members (<%= members.length %>)</h2>
+          <ul class="member-list">
+            <% members.forEach((member) => { %>
+              <li>
+                <div>
+                  <p class="author-name"><%= member.full_name %><% if (member.id === currentUser.id) { %> (you)<% } %></p>
+                  <p class="offer-meta"><%= member.major || 'No major listed' %> · joined <%= formatDateTime(member.joined_at) %></p>
+                </div>
+                <% if (member.is_owner) { %><span class="status status-scheduled">Owner</span><% } %>
+              </li>
+            <% }) %>
+          </ul>
+
+          <% if (isOwner && otherMembers.length > 0) { %>
+            <form action="/teams/<%= team.id %>/transfer" method="post" class="transfer-form"
+                  data-confirm="Make this member the owner? You will become a regular member.">
+              <%- include('../partials/csrfField') %>
+              <div class="form-field">
+                <label for="field-newOwnerId">Transfer ownership to</label>
+                <select id="field-newOwnerId" name="newOwnerId" required>
+                  <% otherMembers.forEach((member) => { %>
+                    <option value="<%= member.id %>"><%= member.full_name %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-ghost btn-block">Make owner</button>
+            </form>
+          <% } %>
+        </section>
+      <% } %>
+    </aside>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

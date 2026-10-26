@@ -1,0 +1,38 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<main id="main" class="container section">
+  <div class="page-head">
+    <div>
+      <h1>My help sessions</h1>
+      <p class="page-lead">Sessions where you’re getting help or helping someone.</p>
+    </div>
+  </div>
+
+  <% if (sessions.length === 0) { %>
+    <p class="empty-state">No help sessions yet. A session starts when a request owner accepts an offer.</p>
+  <% } else { %>
+    <ul class="offer-list">
+      <% sessions.forEach((session) => { %>
+        <% const iAmHelper = session.helper_user_id === currentUser.id; %>
+        <li class="card offer-card">
+          <div class="offer-head">
+            <p class="offer-name"><a href="/sessions/<%= session.id %>"><%= session.request_title %></a></p>
+            <span class="status status-<%= session.status %>"><%= constants.SESSION_STATUSES[session.status] %></span>
+          </div>
+          <% if (session.proposed_by_user_id && session.proposed_by_user_id !== currentUser.id) { %>
+            <p class="action-needed">New details proposed – waiting for your answer</p>
+          <% } %>
+          <p class="offer-meta">
+            <%= iAmHelper ? `You’re helping ${session.requester_name}` : `${session.helper_name} is helping you` %>
+            · <%= constants.SUPPORT_MODES[session.mode] %>
+            · <%= session.scheduled_at ? formatDateTime(session.scheduled_at) : 'Time not set' %>
+            <% if (session.location_label) { %>· <%= session.location_label %><% } %>
+          </p>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>

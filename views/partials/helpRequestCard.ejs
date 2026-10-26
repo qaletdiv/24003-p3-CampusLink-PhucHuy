@@ -1,0 +1,18 @@
+<%# Card showing a single help request. Expects: request %>
+<% const heading = locals.headingLevel || 'h3'; // h2 on list pages, h3 inside a section %>
+<article class="card">
+  <div class="card-tags">
+    <span class="tag"><%= constants.HELP_CATEGORIES[request.category] %></span>
+    <span class="tag tag-muted"><%= constants.SUPPORT_MODES[request.support_mode] %></span>
+    <span class="status status-<%= request.status %>"><%= constants.HELP_REQUEST_STATUSES[request.status] %></span>
+  </div>
+  <<%= heading %> class="card-title"><a href="/help/<%= request.id %>"><%= request.title %></a></<%= heading %>>
+  <p class="card-text"><%= truncate(request.description, 120) %></p>
+  <dl class="card-meta">
+    <div><dt>Posted by</dt><dd><%= request.author_name %></dd></div>
+    <div><dt>When</dt><dd><%= request.scheduled_at ? formatDateTime(request.scheduled_at) : 'Not set' %></dd></div>
+    <% if (request.location_label) { %>
+      <div><dt>Where</dt><dd><%= request.location_label %></dd></div>
+    <% } %>
+  </dl>
+</article>

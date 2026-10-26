@@ -1,0 +1,56 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<main id="main" class="container section">
+  <a href="/help/<%= request.id %>" class="back-link">← Back to request</a>
+
+  <div class="form-card">
+    <h1>Offer help</h1>
+
+    <div class="request-summary">
+      <p class="request-summary-label">You’re offering to help with</p>
+      <p class="request-summary-title"><a href="/help/<%= request.id %>"><%= request.title %></a></p>
+      <p class="offer-meta">
+        Posted by <%= request.author_name %> ·
+        <%= constants.HELP_CATEGORIES[request.category] %> ·
+        <%= constants.SUPPORT_MODES[request.support_mode] %>
+      </p>
+    </div>
+
+    <%- include('../partials/errorSummary', { errors }) %>
+
+    <form action="/help/<%= request.id %>/offers" method="post" novalidate>
+      <%- include('../partials/csrfField') %>
+
+      <div class="form-field">
+        <label for="field-message">Message</label>
+        <textarea id="field-message" name="message" rows="5" required minlength="10" maxlength="1000"
+                  aria-describedby="message-hint<%= errors.message ? ' error-message' : '' %>"
+                  <%- errors.message ? 'aria-invalid="true"' : '' %>
+                  placeholder="How can you help? When are you free?"><%= values.message || '' %></textarea>
+        <p class="field-hint" id="message-hint">Only the request owner can read this. Don’t include your phone number.</p>
+        <%- include('../partials/fieldError', { errors, name: 'message' }) %>
+      </div>
+
+      <fieldset class="form-field" id="field-preferredMode" <%- errors.preferredMode ? 'aria-describedby="error-preferredMode"' : '' %>>
+        <legend>How would you like to help?</legend>
+        <div class="radio-group">
+          <% Object.entries(constants.SUPPORT_MODES).forEach(([value, label]) => { %>
+            <label class="radio">
+              <input type="radio" name="preferredMode" value="<%= value %>" <%= values.preferredMode === value ? 'checked' : '' %>>
+              <%= label %>
+            </label>
+          <% }) %>
+        </div>
+        <%- include('../partials/fieldError', { errors, name: 'preferredMode' }) %>
+      </fieldset>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Send offer</button>
+        <a href="/help/<%= request.id %>" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

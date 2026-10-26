@@ -1,0 +1,54 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<%
+  const statusLabel = session.status === 'cancelled' ? 'Cancelled' : session.is_past ? 'Past' : 'Upcoming';
+  const statusClass = session.status === 'cancelled' ? 'cancelled' : session.is_past ? 'closed' : 'scheduled';
+%>
+
+<main id="main" class="container section">
+  <a href="/teams/<%= team.id %>" class="back-link">← Back to <%= team.name %></a>
+
+  <div class="detail-layout">
+    <article class="detail-main card">
+      <div class="card-tags">
+        <span class="status status-<%= statusClass %>"><%= statusLabel %></span>
+        <span class="tag tag-muted"><%= team.name %></span>
+      </div>
+      <h1 class="detail-title"><%= session.title %></h1>
+      <p class="detail-posted">Created by <%= session.creator_name %> · <%= formatDateTime(session.created_at) %></p>
+      <% if (session.description) { %>
+        <div class="detail-description"><%= session.description %></div>
+      <% } else { %>
+        <p class="muted">No description.</p>
+      <% } %>
+    </article>
+
+    <aside class="detail-side">
+      <section class="card" aria-labelledby="when-title">
+        <h2 id="when-title" class="side-title">When &amp; where</h2>
+        <dl class="detail-list">
+          <div><dt>Starts</dt><dd><%= formatDateTime(session.starts_at) %></dd></div>
+          <div><dt>Ends</dt><dd><%= formatDateTime(session.ends_at) %></dd></div>
+          <div><dt>Where</dt><dd><%= session.location_label || 'Not set' %></dd></div>
+        </dl>
+      </section>
+
+      <% if (canManage) { %>
+        <section class="card" aria-labelledby="manage-title">
+          <h2 id="manage-title" class="side-title">Your session</h2>
+          <div class="stack">
+            <a href="/teams/<%= team.id %>/sessions/<%= session.id %>/edit" class="btn btn-primary btn-block">Edit session</a>
+            <form action="/teams/<%= team.id %>/sessions/<%= session.id %>/cancel" method="post"
+                  data-confirm="Cancel this session? Team members will see it as cancelled.">
+              <%- include('../partials/csrfField') %>
+              <button type="submit" class="btn btn-danger btn-block">Cancel session</button>
+            </form>
+          </div>
+        </section>
+      <% } %>
+    </aside>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,105 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<%
+  const isEdit = Boolean(post);
+  const backUrl = isEdit ? `/lost-found/${post.id}` : '/lost-found';
+  const invalid = (name) => errors[name] ? `aria-invalid="true" aria-describedby="error-${name}"` : '';
+%>
+
+<main id="main" class="container section">
+  <a href="<%= backUrl %>" class="back-link">← Back</a>
+
+  <div class="form-card">
+    <h1><%= pageTitle %></h1>
+    <p class="safety-note">
+      Don’t post ID numbers, home addresses or anyone else’s personal details.
+      For found cards and documents, describe them only in general terms.
+    </p>
+
+    <%- include('../partials/errorSummary', { errors }) %>
+
+    <form action="<%= isEdit ? `/lost-found/${post.id}/edit` : '/lost-found' %>" method="post" novalidate>
+      <%- include('../partials/csrfField') %>
+
+      <fieldset class="form-field" id="field-postType" <%- errors.postType ? 'aria-describedby="error-postType"' : '' %>>
+        <legend>What happened?</legend>
+        <div class="radio-group">
+          <label class="radio"><input type="radio" name="postType" value="lost" <%= values.postType === 'lost' ? 'checked' : '' %>> I lost something</label>
+          <label class="radio"><input type="radio" name="postType" value="found" <%= values.postType === 'found' ? 'checked' : '' %>> I found something</label>
+        </div>
+        <%- include('../partials/fieldError', { errors, name: 'postType' }) %>
+      </fieldset>
+
+      <div class="form-field">
+        <label for="field-title">Title</label>
+        <input id="field-title" name="title" type="text" required minlength="5" maxlength="150"
+               value="<%= values.title || '' %>" placeholder="e.g. Black backpack with a red keychain" <%- invalid('title') %>>
+        <%- include('../partials/fieldError', { errors, name: 'title' }) %>
+      </div>
+
+      <div class="form-field">
+        <label for="field-description">Description</label>
+        <textarea id="field-description" name="description" rows="5" required minlength="10" maxlength="2000"
+                  placeholder="Colour, brand, anything distinctive…" <%- invalid('description') %>><%= values.description || '' %></textarea>
+        <%- include('../partials/fieldError', { errors, name: 'description' }) %>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="field-category">Category</label>
+          <select id="field-category" name="category" required <%- invalid('category') %>>
+            <option value="">Choose a category</option>
+            <% Object.entries(constants.LOST_FOUND_CATEGORIES).forEach(([value, label]) => { %>
+              <option value="<%= value %>" <%= values.category === value ? 'selected' : '' %>><%= label %></option>
+            <% }) %>
+          </select>
+          <%- include('../partials/fieldError', { errors, name: 'category' }) %>
+        </div>
+
+        <div class="form-field">
+          <label for="field-occurredAt">When <span class="optional">(optional)</span></label>
+          <input id="field-occurredAt" name="occurredAt" type="datetime-local"
+                 value="<%= values.occurredAt || '' %>" max="<%= maxDateTime %>" <%- invalid('occurredAt') %>>
+          <%- include('../partials/fieldError', { errors, name: 'occurredAt' }) %>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="field-locationLabel">General location</label>
+        <input id="field-locationLabel" name="locationLabel" type="text" required maxlength="150"
+               value="<%= values.locationLabel || '' %>" placeholder="e.g. Library, 2nd floor" <%- invalid('locationLabel') %>>
+        <%- include('../partials/fieldError', { errors, name: 'locationLabel' }) %>
+      </div>
+
+      <div class="form-field">
+        <label for="field-imageUrl">Photo link <span class="optional">(optional)</span></label>
+        <input id="field-imageUrl" name="imageUrl" type="url" maxlength="500"
+               value="<%= values.imageUrl || '' %>" placeholder="https://…" <%- invalid('imageUrl') %>>
+        <%- include('../partials/fieldError', { errors, name: 'imageUrl' }) %>
+      </div>
+
+      <div class="form-field confirm-box">
+        <label class="checkbox" for="field-shareContact">
+          <input id="field-shareContact" name="shareContact" type="checkbox" value="yes" data-toggles="contact-field"
+                 <%= values.shareContact ? 'checked' : '' %>>
+          <span>Show my contact info on this post <span class="optional">(anyone can see it)</span></span>
+        </label>
+        <div class="form-field contact-field" id="contact-field">
+          <label for="field-contactInfo">Contact info</label>
+          <input id="field-contactInfo" name="contactInfo" type="text" maxlength="150"
+                 value="<%= values.contactInfo || '' %>" placeholder="e.g. your student email" <%- invalid('contactInfo') %>>
+          <p class="field-hint">Only share your own contact details. Leave the box unticked to keep them private.</p>
+          <%- include('../partials/fieldError', { errors, name: 'contactInfo' }) %>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary"><%= isEdit ? 'Save changes' : 'Publish post' %></button>
+        <a href="<%= backUrl %>" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

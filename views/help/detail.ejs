@@ -1,0 +1,175 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<%
+  const pendingCount = offers.filter((offer) => offer.status === 'pending').length;
+  const hasActiveOffer = myOffer && ['pending', 'accepted'].includes(myOffer.status);
+%>
+
+<main id="main" class="container section">
+  <a href="/help" class="back-link">← Back to help requests</a>
+
+  <div class="detail-layout">
+    <div class="detail-main-col">
+      <article class="detail-main card">
+        <div class="card-tags">
+          <span class="tag"><%= constants.HELP_CATEGORIES[request.category] %></span>
+          <span class="tag tag-muted"><%= constants.SUPPORT_MODES[request.support_mode] %></span>
+          <span class="status status-<%= request.status %>"><%= constants.HELP_REQUEST_STATUSES[request.status] %></span>
+        </div>
+
+        <h1 class="detail-title"><%= request.title %></h1>
+        <p class="detail-posted">Posted <%= formatDateTime(request.created_at) %></p>
+
+        <h2 class="sr-only">Description</h2>
+        <div class="detail-description"><%= request.description %></div>
+      </article>
+
+      <% if (isOwner) { %>
+        <section class="offers-section" aria-labelledby="offers-title">
+          <h2 id="offers-title">
+            Offers received
+            <% if (pendingCount > 0) { %><span class="count-badge"><%= pendingCount %> pending</span><% } %>
+          </h2>
+
+          <% if (offers.length === 0) { %>
+            <p class="empty-state">No offers yet. You’ll see them here when someone offers to help.</p>
+          <% } else { %>
+            <ul class="offer-list">
+              <% offers.forEach((offer) => { %>
+                <li class="card offer-card">
+                  <div class="offer-head">
+                    <div>
+                      <p class="offer-name"><%= offer.helper_name %></p>
+                      <% if (offer.helper_major) { %><p class="offer-meta"><%= offer.helper_major %></p><% } %>
+                    </div>
+                    <span class="status status-<%= offer.status %>"><%= constants.OFFER_STATUSES[offer.status] %></span>
+                  </div>
+                  <p class="offer-meta">
+                    Prefers <strong><%= constants.SUPPORT_MODES[offer.preferred_mode] %></strong>
+                    · Sent <%= formatDateTime(offer.created_at) %>
+                  </p>
+                  <p class="offer-message"><%= offer.message %></p>
+
+                  <% if (offer.status === 'pending' && request.status === 'open') { %>
+                    <div class="offer-actions">
+                      <form action="/offers/<%= offer.id %>/accept" method="post"
+                            data-confirm="Accept <%= offer.helper_name %>’s offer? Other pending offers will be closed.">
+                        <%- include('../partials/csrfField') %>
+                        <button type="submit" class="btn btn-primary">Accept</button>
+                      </form>
+                      <form action="/offers/<%= offer.id %>/decline" method="post"
+                            data-confirm="Decline <%= offer.helper_name %>’s offer?">
+                        <%- include('../partials/csrfField') %>
+                        <button type="submit" class="btn btn-ghost">Decline</button>
+                      </form>
+                    </div>
+                  <% } %>
+                </li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </section>
+      <% } %>
+    </div>
+
+    <aside class="detail-side">
+      <section class="card" aria-labelledby="details-title">
+        <h2 id="details-title" class="side-title">Details</h2>
+        <dl class="detail-list">
+          <div>
+            <dt>Support type</dt>
+            <dd><%= constants.SUPPORT_MODES[request.support_mode] %></dd>
+          </div>
+          <div>
+            <dt>When</dt>
+            <dd><%= request.scheduled_at ? formatDateTime(request.scheduled_at) : 'Not set yet' %></dd>
+          </div>
+          <% if (request.location_label) { %>
+            <div>
+              <dt>Where</dt>
+              <dd><%= request.location_label %></dd>
+            </div>
+          <% } %>
+          <div>
+            <dt>Status</dt>
+            <dd><%= constants.HELP_REQUEST_STATUSES[request.status] %></dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="card" aria-labelledby="author-title">
+        <h2 id="author-title" class="side-title">Posted by</h2>
+        <p class="author-name"><%= request.author_name %></p>
+        <% if (request.author_major) { %>
+          <p class="author-major"><%= request.author_major %></p>
+        <% } %>
+      </section>
+
+      <% if (session) { %>
+        <section class="card" aria-labelledby="session-title">
+          <h2 id="session-title" class="side-title">Help session</h2>
+          <p class="muted">
+            Status: <span class="status status-<%= session.status %>"><%= constants.SESSION_STATUSES[session.status] %></span>
+          </p>
+          <a href="/sessions/<%= session.id %>" class="btn btn-primary btn-block">View help session</a>
+        </section>
+      <% } %>
+
+      <% if (isOwner) { %>
+        <section class="card" aria-labelledby="manage-title">
+          <h2 id="manage-title" class="side-title">Your request</h2>
+          <% if (request.status === 'open') { %>
+            <div class="stack">
+              <a href="/help/<%= request.id %>/edit" class="btn btn-primary btn-block">Edit request</a>
+              <form action="/help/<%= request.id %>/cancel" method="post"
+                    data-confirm="Cancel this help request? People will no longer be able to offer help.">
+                <%- include('../partials/csrfField') %>
+                <button type="submit" class="btn btn-danger btn-block">Cancel request</button>
+              </form>
+            </div>
+          <% } else if (request.status === 'matched' && session && session.status === 'cancelled') { %>
+            <%- include('../partials/requestNextStep', { requestId: request.id }) %>
+          <% } else if (request.status === 'matched') { %>
+            <p class="muted">You’ve accepted a helper. Complete or cancel the help session to change this request.</p>
+          <% } else { %>
+            <p class="muted">This request is <%= constants.HELP_REQUEST_STATUSES[request.status].toLowerCase() %> and can no longer be changed.</p>
+          <% } %>
+        </section>
+      <% } else { %>
+        <section class="card" aria-labelledby="offer-title">
+          <h2 id="offer-title" class="side-title"><%= myOffer ? 'Your offer' : 'Can you help?' %></h2>
+
+          <% if (myOffer) { %>
+            <p class="muted">
+              <span class="status status-<%= myOffer.status %>"><%= constants.OFFER_STATUSES[myOffer.status] %></span>
+              · Sent <%= formatDateTime(myOffer.created_at) %>
+            </p>
+            <p class="offer-message"><%= myOffer.message %></p>
+            <% if (myOffer.status === 'pending') { %>
+              <form action="/offers/<%= myOffer.id %>/withdraw" method="post"
+                    data-confirm="Withdraw your offer?">
+                <%- include('../partials/csrfField') %>
+                <button type="submit" class="btn btn-danger btn-block">Withdraw offer</button>
+              </form>
+            <% } %>
+          <% } %>
+
+          <% if (!hasActiveOffer) { %>
+            <% if (request.status !== 'open') { %>
+              <p class="muted">This request is no longer accepting offers.</p>
+            <% } else if (currentUser) { %>
+              <a href="/help/<%= request.id %>/offer" class="btn btn-primary btn-block">
+                <%= myOffer ? 'Send a new offer' : 'Offer help' %>
+              </a>
+            <% } else { %>
+              <a href="<%= loginUrl %>" class="btn btn-primary btn-block">Log in to offer help</a>
+            <% } %>
+          <% } %>
+        </section>
+      <% } %>
+    </aside>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

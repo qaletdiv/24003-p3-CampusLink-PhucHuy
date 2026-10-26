@@ -1,0 +1,86 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<main id="main" class="container section">
+  <div class="page-head">
+    <div>
+      <h1>Lost &amp; Found</h1>
+      <p class="page-lead">Lost something on campus, or found something that isn’t yours?</p>
+    </div>
+    <div class="form-actions">
+      <a href="/lost-found/new?type=lost" class="btn btn-primary">+ I lost something</a>
+      <a href="/lost-found/new?type=found" class="btn btn-ghost">+ I found something</a>
+    </div>
+  </div>
+
+  <form class="filter-bar" action="/lost-found" method="get" role="search" aria-label="Search and filter Lost &amp; Found posts">
+    <div class="field field-wide">
+      <label for="filter-q">Keyword</label>
+      <input id="filter-q" type="search" name="q" value="<%= filters.q %>" maxlength="100" placeholder="Item, description or place…">
+    </div>
+
+    <div class="field">
+      <label for="filter-type">Type</label>
+      <select id="filter-type" name="type">
+        <option value="">Lost and found</option>
+        <% Object.entries(constants.LOST_FOUND_TYPES).forEach(([value, label]) => { %>
+          <option value="<%= value %>" <%= filters.type === value ? 'selected' : '' %>><%= label %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="filter-category">Category</label>
+      <select id="filter-category" name="category">
+        <option value="">All categories</option>
+        <% Object.entries(constants.LOST_FOUND_CATEGORIES).forEach(([value, label]) => { %>
+          <option value="<%= value %>" <%= filters.category === value ? 'selected' : '' %>><%= label %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="filter-posted">Posted</label>
+      <select id="filter-posted" name="posted">
+        <option value="">Any time</option>
+        <% Object.entries(postedOptions).forEach(([value, label]) => { %>
+          <option value="<%= value %>" <%= filters.posted === value ? 'selected' : '' %>><%= label %></option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="filter-status">Status</label>
+      <select id="filter-status" name="status">
+        <% Object.entries(constants.LOST_FOUND_STATUSES).forEach(([value, label]) => { %>
+          <option value="<%= value %>" <%= filters.status === value ? 'selected' : '' %>><%= label %></option>
+        <% }) %>
+        <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>All statuses</option>
+      </select>
+    </div>
+
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary">Apply</button>
+      <% if (hasActiveFilters) { %><a href="/lost-found" class="btn btn-ghost">Clear filters</a><% } %>
+    </div>
+  </form>
+
+  <% if (total === 0) { %>
+    <div class="empty-state">
+      <p>No posts match your search.</p>
+      <% if (hasActiveFilters) { %><a href="/lost-found" class="btn btn-ghost">Clear filters</a><% } %>
+    </div>
+  <% } else { %>
+    <p class="result-count" aria-live="polite">
+      Showing <%= (page - 1) * pageSize + 1 %>–<%= Math.min(page * pageSize, total) %> of <%= total %> post<%= total === 1 ? '' : 's' %>
+    </p>
+    <div class="card-grid">
+      <% posts.forEach((post) => { %>
+        <%- include('../partials/lostFoundCard', { post, headingLevel: 'h2' }) %>
+      <% }) %>
+    </div>
+    <%- include('../partials/pagination') %>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>

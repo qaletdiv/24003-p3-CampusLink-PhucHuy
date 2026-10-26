@@ -1,0 +1,209 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<%
+  const SUPPORT_MODES = constants.SUPPORT_MODES;
+  const hasProposal = Boolean(session.proposed_by_user_id);
+  const isActive = ['scheduled', 'in_progress'].includes(session.status);
+  const hasProposalErrors = Object.keys(proposalErrors).length > 0;
+  const invalid = (name) => proposalErrors[name] ? `aria-invalid="true" aria-describedby="error-${name}"` : '';
+%>
+
+<main id="main" class="container section">
+  <a href="/sessions" class="back-link">← My help sessions</a>
+
+  <div class="detail-layout">
+    <div class="detail-main-col">
+      <article class="detail-main card">
+        <div class="card-tags">
+          <span class="status status-<%= session.status %>"><%= constants.SESSION_STATUSES[session.status] %></span>
+          <span class="tag tag-muted"><%= isRequester ? 'You asked for help' : 'You’re helping' %></span>
+        </div>
+
+        <h1 class="detail-title">Help session</h1>
+        <p class="detail-posted">
+          For the request <a href="/help/<%= session.help_request_id %>"><%= session.request_title %></a>
+          · Created <%= formatDateTime(session.created_at) %>
+        </p>
+
+        <h2 class="side-title">What it’s about</h2>
+        <div class="detail-description"><%= truncate(session.request_description, 400) %></div>
+      </article>
+
+      <%# ----- What happens next, depending on the session status ----- %>
+      <section class="card" aria-labelledby="progress-title">
+        <h2 id="progress-title" class="side-title">Progress</h2>
+
+        <ol class="steps" aria-label="Session steps">
+          <% ['scheduled', 'in_progress', 'completed'].forEach((step, index) => { %>
+            <%
+              const order = { scheduled: 0, in_progress: 1, completed: 2 };
+              const current = order[session.status];
+              const state = session.status === 'cancelled' ? 'todo'
+                : index < current || session.status === 'completed' ? 'done'
+                : index === current ? 'current' : 'todo';
+            %>
+            <li class="step step-<%= state %>" <% if (state === 'current') { %>aria-current="step"<% } %>>
+              <%= constants.SESSION_STATUSES[step] %>
+            </li>
+          <% }) %>
+        </ol>
+
+        <% if (session.status === 'scheduled') { %>
+          <% if (startBlockers.length === 0) { %>
+            <p class="muted">Everything is agreed. Start the session when you meet.</p>
+            <form action="/sessions/<%= session.id %>/start" method="post">
+              <%- include('../partials/csrfField') %>
+              <button type="submit" class="btn btn-primary">Start session</button>
+            </form>
+          <% } else { %>
+            <p class="muted">Before you can start:</p>
+            <ul class="todo-list">
+              <% startBlockers.forEach((blocker) => { %><li><%= blocker %></li><% }) %>
+            </ul>
+          <% } %>
+        <% } else if (session.status === 'in_progress') { %>
+          <p class="muted">The session is in progress. Mark it as completed when you’re done.</p>
+          <form action="/sessions/<%= session.id %>/complete" method="post"
+                data-confirm="Mark this session as completed? The help request will be marked Completed too.">
+            <%- include('../partials/csrfField') %>
+            <button type="submit" class="btn btn-primary">Mark as completed</button>
+          </form>
+        <% } else if (session.status === 'completed') { %>
+          <p class="muted">This session is complete and the help request has been marked Completed.</p>
+        <% } else { %>
+          <p class="muted">This session was cancelled.</p>
+          <% if (showRequestChoice) { %>
+            <%- include('../partials/requestNextStep', { requestId: session.help_request_id }) %>
+          <% } %>
+        <% } %>
+
+        <% if (isActive) { %>
+          <form action="/sessions/<%= session.id %>/cancel" method="post" class="cancel-session"
+                data-confirm="Cancel this help session? <%= isRequester ? 'You can then reopen your request to find another helper.' : 'The requester can then look for another helper.' %>">
+            <%- include('../partials/csrfField') %>
+            <button type="submit" class="btn btn-danger">Cancel session</button>
+          </form>
+        <% } %>
+      </section>
+    </div>
+
+    <aside class="detail-side">
+      <section class="card" aria-labelledby="agreed-title">
+        <h2 id="agreed-title" class="side-title">Agreed details</h2>
+        <dl class="detail-list">
+          <div>
+            <dt>Support type</dt>
+            <dd><%= SUPPORT_MODES[session.mode] %></dd>
+          </div>
+          <div>
+            <dt>When</dt>
+            <dd><%= session.scheduled_at ? formatDateTime(session.scheduled_at) : 'Not agreed yet' %></dd>
+          </div>
+          <% if (session.mode === 'in_person') { %>
+            <div>
+              <dt>Where</dt>
+              <dd><%= session.location_label || 'Not agreed yet' %></dd>
+            </div>
+          <% } %>
+        </dl>
+      </section>
+
+      <% if (hasProposal) { %>
+        <section class="card proposal-card" aria-labelledby="proposal-title">
+          <h2 id="proposal-title" class="side-title">
+            <%= proposedByMe ? 'Your proposal' : `${partner.name} proposed new details` %>
+          </h2>
+          <dl class="detail-list">
+            <div>
+              <dt>Support type</dt>
+              <dd><%= SUPPORT_MODES[session.proposed_mode] %>
+                <% if (session.proposed_mode !== session.mode) { %><span class="changed">changed</span><% } %></dd>
+            </div>
+            <div>
+              <dt>When</dt>
+              <dd><%= formatDateTime(session.proposed_scheduled_at) %></dd>
+            </div>
+            <% if (session.proposed_mode === 'in_person') { %>
+              <div>
+                <dt>Where</dt>
+                <dd><%= session.proposed_location_label %></dd>
+              </div>
+            <% } %>
+          </dl>
+
+          <% if (proposedByMe) { %>
+            <p class="field-hint">Waiting for <%= partner.name %> to accept.</p>
+            <form action="/sessions/<%= session.id %>/proposal/withdraw" method="post">
+              <%- include('../partials/csrfField') %>
+              <button type="submit" class="btn btn-ghost btn-block">Withdraw proposal</button>
+            </form>
+          <% } else { %>
+            <div class="stack">
+              <form action="/sessions/<%= session.id %>/proposal/accept" method="post">
+                <%- include('../partials/csrfField') %>
+                <button type="submit" class="btn btn-primary btn-block">Accept new details</button>
+              </form>
+              <form action="/sessions/<%= session.id %>/proposal/decline" method="post">
+                <%- include('../partials/csrfField') %>
+                <button type="submit" class="btn btn-ghost btn-block">Decline</button>
+              </form>
+            </div>
+          <% } %>
+        </section>
+      <% } else if (session.status === 'scheduled') { %>
+        <section class="card" aria-labelledby="propose-title">
+          <%# <details> opens and closes without any JavaScript %>
+          <details class="propose" <%= hasProposalErrors ? 'open' : '' %>>
+            <summary id="propose-title">Propose different details</summary>
+            <p class="field-hint">e.g. switch to online if you can’t meet in person. <%= partner.name %> has to accept the change.</p>
+
+            <%- include('../partials/errorSummary', { errors: proposalErrors }) %>
+
+            <form action="/sessions/<%= session.id %>/proposal" method="post" novalidate class="help-form">
+              <%- include('../partials/csrfField') %>
+
+              <fieldset class="form-field" id="field-mode" <%- proposalErrors.mode ? 'aria-describedby="error-mode"' : '' %>>
+                <legend>Support type</legend>
+                <div class="radio-group">
+                  <% Object.entries(SUPPORT_MODES).forEach(([value, label]) => { %>
+                    <label class="radio">
+                      <input type="radio" name="mode" value="<%= value %>" <%= proposalValues.mode === value ? 'checked' : '' %>>
+                      <%= label %>
+                    </label>
+                  <% }) %>
+                </div>
+                <%- include('../partials/fieldError', { errors: proposalErrors, name: 'mode' }) %>
+              </fieldset>
+
+              <div class="form-field">
+                <label for="field-scheduledAt">When</label>
+                <input id="field-scheduledAt" name="scheduledAt" type="datetime-local" required
+                       value="<%= proposalValues.scheduledAt %>" <%- invalid('scheduledAt') %>>
+                <%- include('../partials/fieldError', { errors: proposalErrors, name: 'scheduledAt' }) %>
+              </div>
+
+              <div class="form-field" data-show-when-mode="in_person">
+                <label for="field-locationLabel">Where to meet</label>
+                <input id="field-locationLabel" name="locationLabel" type="text" maxlength="150"
+                       value="<%= proposalValues.locationLabel %>" placeholder="e.g. Library, group room 2" <%- invalid('locationLabel') %>>
+                <%- include('../partials/fieldError', { errors: proposalErrors, name: 'locationLabel' }) %>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block">Send proposal</button>
+            </form>
+          </details>
+        </section>
+      <% } %>
+
+      <section class="card" aria-labelledby="partner-title">
+        <h2 id="partner-title" class="side-title"><%= partner.role %></h2>
+        <p class="author-name"><%= partner.name %></p>
+        <p class="author-major"><a href="mailto:<%= partner.email %>"><%= partner.email %></a></p>
+        <p class="field-hint">Only you two can see this email. Use it to agree on a time and place.</p>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

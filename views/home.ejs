@@ -1,0 +1,84 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<main id="main">
+  <section class="hero">
+    <div class="container">
+      <h1>Connect with classmates, learn better together</h1>
+      <p class="hero-lead">Post a help request, find study partners, organize group sessions and track down lost items on campus.</p>
+
+      <form class="search-form" action="/help" method="get" role="search">
+        <label for="quick-search" class="sr-only">Search help requests</label>
+        <input id="quick-search" type="search" name="q" placeholder="Search requests by title or keyword…">
+        <button type="submit" class="btn btn-primary">Search</button>
+      </form>
+
+      <div class="quick-actions">
+        <a href="/help/new" class="btn btn-light">+ Post a help request</a>
+        <a href="/teams/new" class="btn btn-light">+ Create a team</a>
+        <a href="/lost-found/new" class="btn btn-light">+ Post Lost &amp; Found</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section container" aria-labelledby="latest-requests-title">
+    <div class="section-head">
+      <h2 id="latest-requests-title">Latest help requests</h2>
+      <a href="/help">View all →</a>
+    </div>
+
+    <% if (latestRequests.length === 0) { %>
+      <p class="empty-state">No open help requests yet. Be the first to post one!</p>
+    <% } else { %>
+      <div class="card-grid">
+        <% latestRequests.forEach((request) => { %>
+          <%- include('partials/helpRequestCard', { request }) %>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+
+  <div class="section container two-col">
+    <section aria-labelledby="teams-title">
+      <div class="section-head">
+        <h2 id="teams-title">Featured study teams</h2>
+        <a href="/teams">View all →</a>
+      </div>
+      <% if (featuredTeams.length === 0) { %>
+        <p class="empty-state">No teams yet. <a href="/teams/new">Create the first one!</a></p>
+      <% } else { %>
+        <ul class="compact-list">
+          <% featuredTeams.forEach((team) => { %>
+            <li class="card">
+              <a href="/teams/<%= team.id %>" class="session-title"><%= team.name %></a>
+              <p class="offer-meta"><%= team.member_count %> member<%= team.member_count === 1 ? '' : 's' %> · Owner: <%= team.owner_name %></p>
+              <p class="card-text"><%= truncate(team.description, 100) %></p>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+
+    <section aria-labelledby="lost-found-title">
+      <div class="section-head">
+        <h2 id="lost-found-title">Latest Lost &amp; Found posts</h2>
+        <a href="/lost-found">View all →</a>
+      </div>
+      <% if (latestLostFound.length === 0) { %>
+        <p class="empty-state">No open posts right now.</p>
+      <% } else { %>
+        <ul class="compact-list">
+          <% latestLostFound.forEach((post) => { %>
+            <li class="card">
+              <span class="lf-type lf-type-<%= post.post_type %>"><%= constants.LOST_FOUND_TYPES[post.post_type] %></span>
+              <a href="/lost-found/<%= post.id %>" class="session-title"><%= post.title %></a>
+              <p class="offer-meta"><%= post.location_label %> · <%= formatDateTime(post.created_at) %></p>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  </div>
+</main>
+
+<%- include('partials/footer') %>
