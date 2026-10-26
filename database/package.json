@@ -1,0 +1,13 @@
+{
+  "name": "@campuslink/database",
+  "version": "0.1.0",
+  "description": "CampusLink MySQL schema, sample data and setup script",
+  "private": true,
+  "scripts": {
+    "reset": "node setup.js"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.8",
+    "mysql2": "^3.24.6"
+  }
+}

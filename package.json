@@ -1,23 +1,25 @@
 {
   "name": "campuslink",
   "version": "0.1.0",
-  "description": "CampusLink – a student connection platform (Express + MySQL + EJS)",
-  "main": "app.js",
+  "description": "CampusLink – a student connection platform (Next.js frontend + Express API + MySQL)",
   "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "database"
+  ],
   "scripts": {
-    "start": "node app.js",
-    "dev": "node --watch app.js",
-    "db:reset": "node database/setup.js"
+    "dev": "concurrently --kill-others-on-fail --names api,web --prefix-colors blue,magenta \"npm run dev -w @campuslink/backend\" \"npm run dev -w @campuslink/frontend\"",
+    "dev:backend": "npm run dev -w @campuslink/backend",
+    "dev:frontend": "npm run dev -w @campuslink/frontend",
+    "build": "npm run build -w @campuslink/frontend",
+    "start": "concurrently --kill-others --names api,web --prefix-colors blue,magenta \"npm start -w @campuslink/backend\" \"npm start -w @campuslink/frontend\"",
+    "db:reset": "npm run reset -w @campuslink/database"
   },
   "engines": {
     "node": ">=20"
   },
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "dotenv": "^18.0.8",
-    "ejs": "^7.0.1",
-    "express": "^5.3.0",
-    "express-session": "^1.19.0",
-    "mysql2": "^3.24.6"
+  "devDependencies": {
+    "concurrently": "^10.0.6"
   }
 }

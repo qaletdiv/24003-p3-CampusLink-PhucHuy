@@ -1,0 +1,20 @@
+{
+  "name": "@campuslink/frontend",
+  "version": "0.1.0",
+  "description": "CampusLink web app (Next.js + Tailwind CSS)",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 5173",
+    "build": "next build",
+    "start": "next start --port 5173"
+  },
+  "dependencies": {
+    "next": "^16.4.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}
