@@ -1,4 +1,0 @@
-<%# Error message under one field. Expects: errors, name. Link it with aria-describedby="error-<name>" %>
-<% if (errors && errors[name]) { %>
-  <p class="field-error" id="error-<%= name %>"><%= errors[name] %></p>
-<% } %>
